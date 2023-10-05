@@ -4,14 +4,15 @@ import math
 
 pygame.init()
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 1350, 650
+SCREEN_WIDTH, SCREEN_HEIGHT = 1350, 650 #screen res 
 MAX_SPEED = 10
 GENERATION_SIZE = 30
-CHANGE_DIRECTION_INTERVAL = 20  #change direction every 30 frames
+CHANGE_DIRECTION_INTERVAL = 20  #20 fps
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Evolution Simulation")
+pygame.display.set_caption("Simple Evolution Simulation")
 
+#Creature class def
 class Creature:
     def __init__(self, x, y):
         self.alive = True
@@ -23,8 +24,9 @@ class Creature:
         self.age = random.randint(5, 50)
         self.spikes = random.choice([0, 1])
         self.rect = pygame.Rect(self.x, self.y, 20, 20)
-        self.frames_until_direction_change = random.randint(0, CHANGE_DIRECTION_INTERVAL)
-
+        self.frames_until_direction_change = random.randint(0, CHANGE_DIRECTION_INTERVAL) #to randomize mvmnt
+    
+    #draw fnct
     def draw(self):
         pygame.draw.circle(screen, (0, 255, 0), (self.x, self.y), 5)
         if self.spikes:
@@ -35,6 +37,7 @@ class Creature:
         text = font.render(f"AvgSpeed: {abs((self.speed_x + self.speed_y) / 2):.2f}, Agility: {abs(self.agility):.2f}", True, (255, 255, 255))
         screen.blit(text, (self.rect.x - 60, self.rect.y - 25))
 
+    #mvmnt sim fnct
     def move(self):
         self.frames_until_direction_change -= 1
         if self.frames_until_direction_change <= 0:
@@ -59,9 +62,11 @@ class Creature:
 
 creatures = [Creature(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)) for _ in range(GENERATION_SIZE)]
 
+#fitness fnct to select the best individuals / natural selection
 def fitness(creature):
     return creature.agility + creature.spikes + creature.speed_y + creature.speed_x
 
+#main evolution fnct
 def evolve(creatures, mutation_rate=0.1, crossover_rate=0.5):
     creatures.sort(key=fitness, reverse=True)
     top_performers = int(len(creatures) * 0.2)
@@ -71,7 +76,7 @@ def evolve(creatures, mutation_rate=0.1, crossover_rate=0.5):
     while len(new_creatures) < GENERATION_SIZE:
         parent1 = random.choice(creatures)
         parent2 = random.choice(creatures)
-
+        #crossing over
         if random.random() < crossover_rate:
             child = Creature(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT))
             child.speed_x = random.uniform(-MAX_SPEED, MAX_SPEED)
@@ -86,7 +91,7 @@ def evolve(creatures, mutation_rate=0.1, crossover_rate=0.5):
             child.agility = parent1.agility
             child.age = parent1.age
             child.spikes = parent1.spikes
-
+        #mutation
         if random.random() < mutation_rate:
             child.agility += random.uniform(-1, 1)
             child.age += random.randint(-1, 1)
@@ -103,6 +108,7 @@ average_speed = 0
 spike_percentage = 0
 num_spikes = 0
 
+#main loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -112,9 +118,9 @@ while running:
         if creature.alive:
             creature.move()
 
-    if all(not creature.alive for creature in creatures):
+    if all(not creature.alive for creature in creatures): #check if all cells are not alive
         generation_count += 1
-        creatures = evolve(creatures)
+        creatures = evolve(creatures) #re evolve the new generation
         for creature in creatures:
             score += (creature.agility / GENERATION_SIZE)
             average_speed += abs(((creature.speed_x + creature.speed_y) / 2) / GENERATION_SIZE)
